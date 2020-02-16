@@ -1,0 +1,7 @@
+{
+    "description": "Displays the current CPU and RAM usage percentage.",
+    "prevent-decorations": false,
+    "uuid": "cpuramload@freddy",
+    "name": "CPU RAM Usage",
+    "last-edited": 1571550246
+}

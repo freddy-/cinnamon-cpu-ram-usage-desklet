@@ -1,0 +1,14 @@
+
+.box {
+  text-align: center;
+  padding: 10px;
+  background-color: transparent;
+  font-family: 'Classic Console', monospace;
+  font-size: 20px;
+  color: white;
+}
+
+.text-label {
+  margin-bottom: 5px;
+  text-align: left;
+}
