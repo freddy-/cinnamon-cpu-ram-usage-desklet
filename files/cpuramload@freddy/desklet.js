@@ -55,6 +55,8 @@ TheDesklet.prototype = {
       null
     );
 
+    this.lastRx;
+    this.lastTx;
     this.active = [];
     this.total = [];
     this.refresh_rate = 1;
@@ -80,19 +82,29 @@ TheDesklet.prototype = {
       vertical: true,
       width: this.width,
       height: this.height,
-      style_class: "box"
+      style_class: "temp-box"
     });
 
     let ramPercent = this.get_ram_usage();
     let cpuPercent = this.get_cpu_usage();
 
-    this.text1 = new St.Label({ style_class: "text-label"});
-    this.text1.set_text("CPU: " + cpuPercent);
-    this.window.add(this.text1);
+    let networkUsage = this.get_network_usage();
 
-    this.text1 = new St.Label({ style_class: "text-label"});
-    this.text1.set_text("RAM: " + ramPercent);
-    this.window.add(this.text1);
+    let cpuLabel = new St.Label({ style_class: "text-label"});
+    cpuLabel.set_text("CPU: " + cpuPercent);
+    this.window.add(cpuLabel);
+
+    let ramLabel = new St.Label({ style_class: "text-label"});
+    ramLabel.set_text("RAM: " + ramPercent);
+    this.window.add(ramLabel);
+
+    let networkUpLabel = new St.Label({ style_class: "text-label"});
+    networkUpLabel.set_text(" UL: " + networkUsage.tx);
+    this.window.add(networkUpLabel);
+
+    let networkDownLabel = new St.Label({ style_class: "text-label"});
+    networkDownLabel.set_text(" DL: " + networkUsage.rx);
+    this.window.add(networkDownLabel);
 
     this.setContent(this.window);
     this.mainloop = Mainloop.timeout_add(
@@ -119,9 +131,9 @@ TheDesklet.prototype = {
 
       let percentage = Math.round(use * 100 / size);
       if (percentage < 10) {
-        return " " + percentage + "%";
+        return (" " + percentage + "%").padStart(7, " ");
       } else {
-        return percentage + "%";
+        return (percentage + "%").padStart(7, " ");
       }
 
     } catch (error) {
@@ -131,7 +143,6 @@ TheDesklet.prototype = {
 
   get_cpu_usage: function() {
     try {
-      // borrowed from: cpuload@kimse
       let utilization = [];
       let active = [];
       let total = [];
@@ -160,14 +171,48 @@ TheDesklet.prototype = {
       this.total = total;
 
       if (utilization < 10) {
-        return " " + utilization + "%";
+        return (" " + utilization + "%").padStart(7, " ");
       } else {
-        return utilization + "%";
+        return (utilization + "%").padStart(7, " ");
       }
 
     } catch (error) {
       return error + "";
     }
+  },
+
+  get_network_usage: function () {
+    try {
+      let rx = Cinnamon.get_file_contents_utf8_sync("/sys/class/net/wlp2s0/statistics/rx_bytes");
+      let tx = Cinnamon.get_file_contents_utf8_sync("/sys/class/net/wlp2s0/statistics/tx_bytes");
+      let rxUsage = "-";
+      let txUsage = "-";
+
+      if (this.lastRx && this.lastTx) {
+        rxUsage = this.sizeIEC(rx - this.lastRx);
+        txUsage = this.sizeIEC(tx - this.lastTx);
+      }
+
+      this.lastRx = rx;
+      this.lastTx = tx;
+
+      return {
+        rx: rxUsage.padStart(7, " "),
+        tx: txUsage.padStart(7, " ")
+      };
+
+    } catch (err) {
+      global.log(err);
+    }
+
+    return {
+      rx: "-",
+      tx: "-"
+    };
+  },
+
+  sizeIEC: function (a,b,c,d,e){
+    return (b=Math,c=b.log,d=1024,e=c(a)/c(d)|0,a/b.pow(d,e)).toFixed(1)+(e?'KMGTPEZY'[--e]:'B');
   },
 
   calculateCpuUtilization: function(currentActive, previousActive, currentTotal, previousTotal) {
