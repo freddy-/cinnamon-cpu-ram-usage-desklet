@@ -82,7 +82,7 @@ TheDesklet.prototype = {
       vertical: true,
       width: this.width,
       height: this.height,
-      style_class: "temp-box"
+      style_class: "box"
     });
 
     let ramPercent = this.get_ram_usage();
